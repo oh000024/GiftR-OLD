@@ -19,17 +19,17 @@ Updated: Mar 14, 2017
 
 "use strict"
 //const CustomObject = require('./CustomObject');
-const REGEX_URL = "/((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/";
+var PATTERN = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/;
 
 const INVALID_ID = 0;
-const MYKEY = "oh000024";
+const MYKEY = "giftr-oh000024";
 const GIFTSHTML = "gifts.html";
 
-var magicnumber = 0;
+//var magicnumber = 0;
 let globalPersonId = 0;
 // For datas
-let lists = [];
-let people = [];
+//let lists = [];
+//let people = [];
 
 var PERSON = {
 	id: '',
@@ -48,21 +48,6 @@ var IDEA = {
 	"url": ""
 };
 
-var Person = { 
-	firstName: '',
-	    lastName: 'Connolly',
-	    dob: '',
-	    gender: '',
-	    getAge: function () {        
-		var today = new Date();        
-		var diff = today.getTime() - this.birthDate.getTime();        
-		var year = 1000 * 60 * 60 * 24 * 365.25;        
-		return Math.floor(diff / year);    
-	},
-	    toString: function () {        
-		return this.firstName + ' ' + this.lastName + ' is a ' + this.getAge() +             ' year-old ' + this.gender;    
-	}
-};
 const GSTORAGE = {
 	storage: "",
 	gdata: null,
@@ -216,7 +201,7 @@ const GAPP = {
 	clearEvent: function () {
 		let names = document.querySelectorAll("data-id");
 		for (let i = 0, j = names.length; i < j; i++) {
-			names[i].removeEventListener('click', this.onClickName);
+			names[i].removeEventListener('touchstart', this.onClickName);
 		};
 	},
 	onClickName: function (aName, e) {
@@ -237,12 +222,14 @@ const GAPP = {
 	createHtml4Peple: function (person) {
 
 		try {
-			this.ul = document.querySelector(".table-view");
+			//this.ul = document.querySelector(".table-view");
 			let li = document.createElement("li");
 			let spanName = document.createElement("span");
 			let spanDate = document.createElement("span");
 			let aName = document.createElement("a");
 			let aDod = document.createElement("a");
+			let sbadges =  document.createElement("span");
+			
 
 			li.classList.add("table-view-cell");
 			spanName.classList.add("name");
@@ -250,15 +237,22 @@ const GAPP = {
 			aName.href = "#personModal";
 			aName.textContent = person.name;
 
-			aDod.classList.add("navigate-right", "pull-right");
+			aDod.classList.add("navigate-right","pull-right");
 			aDod.href = GIFTSHTML;
 
+			sbadges.classList.add("badge","badge-primary","pull-right");
+			sbadges.textContent = person.ideas.length;
+			
+			//aDod.appendChild(sbadges);
 			let att = document.createAttribute("data-id");
 			att.value = person.id;
 			aName.setAttributeNode(att);
+			
+			// For Testing Event
 			aName.addEventListener("touchstart", function (ev) {
 				GAPP.onClickName(aName, ev)
 			});
+
 
 			aDod.addEventListener("touchstart", function (ev) {
 				var a = ev.currentTarget;
@@ -266,14 +260,17 @@ const GAPP = {
 			});
 			spanDate.classList.add("dob");
 			spanDate.textContent = person.dob;
+			spanDate.appendChild(sbadges);
 
 			spanName.appendChild(aName);
-
 			spanName.appendChild(aDod);
+			
 			aDod.appendChild(spanDate);
 
 			li.appendChild(spanName);
 			li.appendChild(spanDate);
+			//li.appendChild(sbadges);
+			//li.appendChild(abadges);
 			this.ul.appendChild(li);
 		} catch (e) {
 
@@ -302,12 +299,12 @@ const GAPP = {
 
 	createHtml4Gifts: function (person) {
 
-//		let spans = document.querySelectorAll(".icon-trash");
-//		for (let span of spans) {
-//			span.removeEventListener('click', this.deleteGift);
-//		}
+		//		let spans = document.querySelectorAll(".icon-trash");
+		//		for (let span of spans) {
+		//			span.removeEventListener('click', this.deleteGift);
+		//		}
 
-		document.querySelector(".title").textContent = "Lists for "+person.name;
+		document.querySelector(".title").textContent = "Lists for " + person.name;
 		let ideas = person.ideas;
 		this.ul = document.querySelector(".table-view");
 		this.ul.innerHTML = "";
@@ -320,7 +317,7 @@ const GAPP = {
 			li.classList.add("table-view-cell", "media");
 			spanName.classList.add("pull-right", "icon", "icon-trash", "midline");
 
-			spanName.addEventListener('click', this.deleteGift(li, this.ul, person,idea['idea']));
+			spanName.addEventListener('touchstart', this.deleteGift(li, this.ul, person, idea['idea']));
 
 			Object.keys(idea).forEach(function (key) {
 
@@ -331,7 +328,15 @@ const GAPP = {
 					div.textContent = value;
 				} else {
 					let p = document.createElement("p");
+					if(key=="url" && value.length!=0){
+						let aurl = document.createElement("a");
+						aurl.href=value;
+						aurl.textContent=value;
+						p.appendChild(aurl);
+					}
+					else{
 					p.textContent = value;
+					}
 					div.appendChild(p);
 				}
 			});
@@ -340,7 +345,7 @@ const GAPP = {
 			this.ul.appendChild(li);
 		}
 	},
-	deleteGift: function (li, ul, person,idea) {
+	deleteGift: function (li, ul, person, idea) {
 		return function () {
 			GSTORAGE.deleteIdea(person, idea);
 			ul.removeChild(li);
@@ -365,9 +370,9 @@ const GAPP = {
 }
 const MODALHANDLER = {
 	init: function () {
-		window.document.querySelector('.btn.btn-primary.btn-block').addEventListener('click', this.addPersonOK);
+		window.document.querySelector('.btn.btn-primary.btn-block').addEventListener('touchstart', this.addPersonOK);
 
-		window.document.querySelector('.btn.btn-block').addEventListener('click', this.addPersonCancel);
+		window.document.querySelector('.btn.btn-block').addEventListener('touchstart', this.addPersonCancel);
 	},
 
 	addPersonOK: function (ev) {
@@ -423,6 +428,7 @@ const MODALHANDLER = {
 		modal.classList.remove('active');
 		document.getElementById("name").value = "";
 		document.getElementById("dob").value = "";
+		globalPersonId = 0;
 	},
 
 	addIdeaOK: function (person, ev) {
@@ -441,45 +447,56 @@ const MODALHANDLER = {
 					return;
 				}
 
-				//
-				let newidea = Object.create(IDEA);
-				newidea.idea = idea;
-				newidea.at = at;
 				//console.log(REGEX_URL.test(url));
 
 				//REGUALEXP
 				//var re = new RegExp('\\w+');
-				newidea.url = url
-				newidea.cost = cost
+				let ret = PATTERN.test(url);
+				console.log(ret)
+				if(!ret){
+					throw new Error("URL is invalid!");
+				}
+							//
+				let newidea = Object.create(IDEA);
+				newidea.idea = idea;
+				newidea.at = at;
+				newidea.url = url;
+				newidea.cost = cost.length!=0?"$"+cost:cost;
 
 				person.ideas.push(newidea);
+				person.say = function () {
+					console.log("MY Name is " + this.name);
+				}
 
 				let modal = document.getElementById('giftModal');
 				modal.classList.remove('active');
 
-				let event = new CustomEvent('click');
+				let event = new CustomEvent(person.name);
+				document.addEventListener(person.name, person.say);
+				document.dispatchEvent(event);
 
 				GSTORAGE.updateData(person);
 				GAPP.createHtml4Gifts(person, globalPersonId);
+				MODALHANDLER.clearInput();
+				globalPersonId = 0;
 
 			} catch (e) {
-				console.log(e.message);
-			} finally {
-				document.getElementById("giftidea").value = "";
-				document.getElementById("at").value = "";
-				document.getElementById("url").value = "";
-				document.getElementById("cost").value = "";
-				globalPersonId = 0;
+				alert(e.message);
 			}
-		}
+		} 
+		
 	},
-	addIdeaCancel: function () {
+	clearInput:function(){
 		let modal = document.getElementById('giftModal');
 		modal.classList.remove('active');
 		document.getElementById("giftidea").value = "";
 		document.getElementById("at").value = "";
 		document.getElementById("url").value = "";
 		document.getElementById("cost").value = "";
+	},
+	addIdeaCancel: function () {
+			this.clearInput();
+			globalPersonId = 0;
 	}
 }
 const HANDLER = {
@@ -532,9 +549,9 @@ var app = {
 	showPersonList: function () {
 		console.log("Here is First Page");
 		//GAPP.init();
-		window.document.querySelector('.btn.btn-primary.btn-block').addEventListener('click', MODALHANDLER.addPersonOK);
+		window.document.querySelector('.btn.btn-primary.btn-block').addEventListener('touchstart', MODALHANDLER.addPersonOK);
 
-		window.document.querySelector('.btn.btn-block').addEventListener('click', MODALHANDLER.addPersonCancel);
+		window.document.querySelector('.btn.btn-block').addEventListener('touchstart', MODALHANDLER.addPersonCancel);
 		GAPP.buildList();
 	},
 	showGifts: function (id) {
@@ -547,10 +564,10 @@ var app = {
 				GAPP.createHtml4Gifts(person);
 			}
 			let okbut = document.querySelector('.btn.btn-primary.btn-block');
-			okbut.addEventListener('click', MODALHANDLER.addIdeaOK(person));
+			okbut.addEventListener('touchstart', MODALHANDLER.addIdeaOK(person));
 
 			let cancbut = document.querySelector('.btn.btn-block');
-			cancbut.addEventListener('click', MODALHANDLER.addIdeaCancel);
+			cancbut.addEventListener('touchstart', MODALHANDLER.addIdeaCancel);
 
 		} catch (e) {
 			console.log(e.message);
